@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import formatWithCustomPrettier from "./formatWithCustomPrettier";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "testownlint" is now active!');
@@ -11,12 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // function formatArray(
-  //   document: vscode.TextDocument,
-  //   edit: vscode.TextEditorEdit,
-  //   range:vscode
-  // );
-
+  //format selected element
   context.subscriptions.push(
     vscode.commands.registerCommand("testownlint.formatArray", () => {
       const activeTextEditor = vscode.window.activeTextEditor;
@@ -24,6 +20,52 @@ export function activate(context: vscode.ExtensionContext) {
         const doc = activeTextEditor.document;
         const edit = new vscode.WorkspaceEdit();
         const selection = activeTextEditor.selection;
+
+        if (selection.isEmpty) {
+          return vscode.window.showInformationMessage(
+            "Please Select Text for formate"
+          );
+        }
+
+        const text = doc.getText(selection);
+
+        const elements = text.split(",");
+
+        const formattedElements = elements
+          .map((element) => element.trim())
+          .join(`\n\t,${" "}`);
+
+        const splitSemicolon = formattedElements.split(/(?<=[\]}])\s*;\s*/);
+        // const splitSemicolon = formattedElements.split(";");
+        const fullFormate = splitSemicolon
+          .map((element) => element.trim())
+          .join(`\n;`);
+
+        // formate array with reguler expression
+        // const fullFormate = text
+        //   .replace(/ *, */g, "\n\t,")
+        //   .replace(/ *; */g, "\n;");
+
+        // Replace the content of the document
+        edit.replace(doc.uri, selection, fullFormate);
+
+        // Apply the edit to the document
+        return vscode.workspace.applyEdit(edit);
+      }
+    })
+  );
+
+  // format file
+  context.subscriptions.push(
+    vscode.commands.registerCommand("testownlint.formateFile", () => {
+      const activeTextEditor = vscode.window.activeTextEditor;
+      if (activeTextEditor) {
+        const doc = activeTextEditor.document;
+        console.log(
+          "🚀 ~ file: extension.ts:52 ~ vscode.commands.registerCommand ~ doc:",
+          doc
+        );
+        const edit = new vscode.WorkspaceEdit();
 
         const fullRange = new vscode.Range(
           new vscode.Position(0, 0),
@@ -34,15 +76,16 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         const text = doc.getText(fullRange);
-        console.log("text", text);
+        console.log(
+          "🚀 ~ file: extension.ts:67 ~ vscode.commands.registerCommand ~ text:",
+          typeof text
+        );
+
         const elements = text.split(",");
-        console.log("elements", elements);
         const formattedElements = elements
           .map((element) => element.trim())
-          .join("\n,");
-        console.log(formattedElements);
+          .join(`\n,${" "}`);
 
-        // Replace the content of the document
         edit.replace(doc.uri, fullRange, formattedElements);
 
         // Apply the edit to the document
@@ -50,7 +93,43 @@ export function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  // formate with prettier plugin for selected element
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("testownlint.prettierFormate", async () => {
+      const activeTextEditor = vscode.window.activeTextEditor;
+      if (activeTextEditor) {
+        const doc = activeTextEditor.document;
+        const edit = new vscode.WorkspaceEdit();
+        const selection = activeTextEditor.selection;
+
+        if (selection.isEmpty) {
+          return vscode.window.showInformationMessage(
+            "Please Select Text for formate"
+          );
+        }
+
+        const text = doc.getText(selection);
+        console.log("🚀 ~ prettier log:", text);
+
+        const formattedText = await formatWithCustomPrettier(text);
+        console.log(
+          "🚀 ~ file: extension.ts:117 ~ vscode.commands.registerCommand ~ formattedText:",
+          formattedText
+        );
+
+        // Replace the content of the document
+        edit.replace(doc.uri, selection, formattedText);
+
+        // Apply the edit to the document
+        return vscode.workspace.applyEdit(edit);
+      }
+    })
+  );
 }
+
+// prettier plugin
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
