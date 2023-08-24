@@ -1,15 +1,18 @@
-import * as prettier from "prettier";
-import { customPlugin } from "./prettier-plugin";
+import * as prettier from 'prettier';
 
-const formatWithCustomPrettier = (input: string) => {
-  console.log(
-    "🚀 ~ file: formatWithCustomPrettier.ts:5 ~ formatWithCustomPrettier ~ input:",
-    input
-  );
-  return prettier.format(input, {
-    plugins: [customPlugin],
-    parser: "babel",
-  });
+//formatting custome code which tack options from .prettierrc file and text 
+const formatCustomCode = async (text: string) => {
+    const configPath = await prettier.resolveConfigFile(__dirname);
+    const options = await prettier.resolveConfig(configPath as string);
+    console.log(
+        '🚀 ~ file: formatWithCustomPrettier.ts:21 ~ formatCustomCode ~ options:',
+        options
+    );
+
+    return prettier.format(text, {
+        ...options,
+        parser: 'babel',
+    });
 };
 
-export default formatWithCustomPrettier;
+export default formatCustomCode;
